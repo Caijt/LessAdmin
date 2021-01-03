@@ -19,9 +19,7 @@ import './components'
 Vue.config.productionTip = false
 //系统错误捕获
 Vue.config.errorHandler = (error, vm)=>{
-  console.log('全局异常');
-  // console.error(vm);
-  console.log(error);
+  console.log('全局异常',error);
 }
 
 new Vue({
