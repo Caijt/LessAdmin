@@ -1,0 +1,46 @@
+// $--input-mini-height             : 26px;
+// $--button-mini-padding-vertical  : 6px;
+// $--button-mini-padding-horizontal: 12px;
+// $--pagination-font-size          : 12px;
+// $--pagination-button-height      : 26px;
+// $--input-border-radius           :2px;
+// $--pagination-button-width       : 28px;
+$--font-path: "~element-ui/lib/theme-chalk/fonts";
+
+button.el-button + button.el-button {
+	margin-left: 5px;
+}
+//解决loading无法全覆盖的问题
+.el-divider.el-divider--horizontal {
+	margin: 0px 0 20px;
+	padding-top: 18px;
+	background-color: unset;
+	border-bottom: 1px solid #DCDFE6;
+}
+.el-upload-list {
+	.el-upload-list__item:first-child,
+	.el-upload-list__item {
+		margin-top: 0px;
+	}
+	.el-upload-list__item {
+		.el-icon-close {
+			display: unset;
+			right: unset;
+		}
+		.el-upload-list__item-name {
+			margin-left: 20px;
+		}
+	}
+}
+//解决表格中复选框在谷歌浏览器出现...的问题
+.el-table .el-table__row .el-table-column--selection .cell {
+	text-overflow: unset;
+	padding-left: 10px;
+}
+//修复table的固定列在没有滚动条时底部出现17px的方格问题
+.el-table:not(.el-table--scrollable-x) {
+	.el-table__fixed-right {
+		height: 100% !important;
+	}
+}
+@import "~element-ui/packages/theme-chalk/src/index";

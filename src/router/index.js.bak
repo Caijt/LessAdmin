@@ -1,0 +1,171 @@
+/*
+  无限级嵌套router-view版本，因为要完美实现多页面标签功能，所以舍弃该版本
+*/
+import Vue from 'vue';
+import Router from 'vue-router';
+import store from '@/store';
+import NProgress from 'nprogress';
+import 'nprogress/nprogress.css';// Progress 进度条样式
+import authApi from "@/api/common/auth";
+import commonApi from "@/api/common/common";
+const _import = require('./_import_' + process.env.NODE_ENV);
+
+Vue.use(Router)
+
+let router = new Router({
+  routes: [
+    { path: '/', redirect: '/index' },
+    {
+      path: '/login',
+      name: 'login',
+      component: _import('/login'),
+      meta: {
+        noAuth: true
+      }
+    },
+    {
+      path: '/qywxAuth/:path?',
+      name: 'qywxAuth',
+      component: _import('/qywxAuth'),
+      props: true,
+      meta: {
+        title: '微信企业认证',
+        noAuth: true
+      }
+    }
+  ]
+})
+
+router.beforeEach((to, from, next) => {
+  NProgress.start();
+  let configFunc;
+  if (store.state.sys.config == null) {
+    configFunc = commonApi.getConfigList();
+  } else {
+    configFunc = Promise.resolve();
+  }
+
+  configFunc.then(res => {
+    if (res) {
+      let config = {};
+      res.data.forEach(item => {
+        switch (item.type) {
+          case "NUMBER":
+            config[item.key] = Number(item.value);
+            break;
+          case "BOOL":
+            config[item.key] = item.value == "ON" ? true : false;
+            break;
+          default:
+            config[item.key] = item.value;
+        }
+      });
+      store.commit("SET_CONFIG", config);
+    }
+    /* 判断要访问的路由是否需要权限访问 */
+    if (to.meta && to.meta.noAuth) {
+      next()
+    } else {
+      /* 判断是否有已登录 */
+      if (sessionStorage.getItem("token") ? true : false) {
+        /* 判断是否已获取登录认证信息 */
+        if (store.getters.hasAuthInfo) {
+          next()
+        } else {
+          console.log(store.state.sys.config.LAYOUT)
+          let layout = require("@/components/common/layout/" + store.state.sys.config.LAYOUT + "/index").default;
+          /* 获取登录认证信息 */
+          authApi.getAuthInfo().then(res => {
+            let permissionMenus = res.data.permissionMenus;
+            let rootRouter = {
+              name: "layout",
+              path: "/",
+              component: layout,
+              meta: { id: null, isHide: true },
+              children: [
+                {
+                  name:"index",
+                  path: 'index',
+                  component: _import("/index"),
+                  meta: { title: '首页', fullPath: '/index' }
+                }
+              ]
+            };
+            function buildPermissionAndFullPath(menu) {
+              permissionMenus.forEach((m, i) => {
+                if (m.parentId == menu.id) {
+                  m.fullPath = menu.fullPath + '/' + m.path;
+                  m.permissionPath = (menu.permissionPath ? (menu.permissionPath + '.') : "") + m.path;
+                  buildPermissionAndFullPath(m);
+                }
+              })
+            };
+            buildPermissionAndFullPath({
+              id: null,
+              fullPath: "",
+              permissionPath: ""
+            });
+            /*先取出顶级菜单，没有parentId的就是顶级菜单*/
+            // permissionMenus.forEach((m, i) => {
+            //   if (m.parentId == null) {
+            //     let parentMenu = {
+            //       path: m.fullPath,
+            //       component: layout,
+            //       meta: { id: m.id, title: m.name, fullPath: m.fullPath }
+            //     }
+            //     vueRouters.push(parentMenu)
+            //   }
+            // })
+            function convertTree(parentRouter) {
+              permissionMenus.forEach((m, i) => {
+                if (m.parentId == parentRouter.meta.id) {
+                  if (!parentRouter.children) parentRouter.children = [];
+                  let router = {
+                    name: m.permissionPath,
+                    path: m.path,
+                    component: _import(m.fullPath + "/index.vue"),
+                    meta: {
+                      id: m.id,
+                      title: m.name,
+                      fullPath: m.fullPath,
+                      icon: m.icon,
+                      canRead: m.canRead,
+                      canWrite: m.canWrite,
+                      canReview: m.canReview
+                    }
+                  }
+                  parentRouter.children.push(router);
+                  convertTree(router);
+                }
+              })
+            }
+            convertTree(rootRouter)
+            store.commit('SET_ID', res.data.userId);
+            store.commit('SET_NAME', res.data.userName);
+            store.commit("SET_PERMISSION_MENUS", res.data.permissionMenus);
+            store.commit('SET_PERMISSION_ROUTERS', rootRouter.children);
+            router.addRoutes([rootRouter]);
+            router.addRoutes([{ path: '*', redirect: '/index' }]);
+            next({ path: to.path, replace: true });
+          })
+        }
+      } else {
+        next('/login')
+        if (from.path == "/login") {
+          NProgress.done()
+        }
+      }
+    }
+  })
+})
+
+router.afterEach((to, from) => {
+  NProgress.done() // 结束Progress
+  if (to.meta && to.meta.title) {
+    document.title = to.meta.title + ' | ' + store.state.sys.config.SYSTEM_TITLE
+  } else {
+    document.title = store.state.sys.config.SYSTEM_TITLE
+  }
+})
+
+export default router

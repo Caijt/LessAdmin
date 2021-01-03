@@ -1,0 +1,24 @@
+.__common-layout-moduleMenu.el-menu--horizontal {
+  .el-menu-item,
+  .el-submenu__title {
+    border-bottom: 0px !important;
+    font-size: 12px !important;
+    line-height: 38px !important;
+    height: 40px !important;
+    i.el-icon-menu {
+      font-size: 14px;
+    }
+  }
+  .el-menu-item.is-active::before,
+  .el-submenu.is-active > .el-submenu__title::before {
+    content: "";
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    margin-left: -6px;
+    border-top: 6px solid rgba(0, 0, 0, 0);
+    border-right: 6px solid rgba(0, 0, 0, 0);
+    border-bottom: 6px solid #fff;
+    border-left: 6px solid rgba(0, 0, 0, 0);
+  }
+}
