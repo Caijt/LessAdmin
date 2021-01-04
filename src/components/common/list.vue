@@ -9,15 +9,18 @@
       <div>
         <slot name="toolbar-right"></slot>
         <el-button
-          :type="isExpandQuery?undefined:'primary'"
+          :type="isExpandQuery ? undefined : 'primary'"
           v-show="showQuery"
-          @click="isExpandQuery=!isExpandQuery;"
+          @click="isExpandQuery = !isExpandQuery"
           size="mini"
         >
           查询器
           <i
             class="el-icon--right"
-            :class="{'el-icon-arrow-up':isExpandQuery,'el-icon-arrow-down':!isExpandQuery}"
+            :class="{
+              'el-icon-arrow-up': isExpandQuery,
+              'el-icon-arrow-down': !isExpandQuery,
+            }"
           ></i>
         </el-button>
       </div>
@@ -30,19 +33,22 @@
         v-show="isExpandQuery"
         @keyup.enter.native="query()"
       >
-        <div style="display:flex;justify-content:center">
+        <div style="display: flex; justify-content: center">
           <div>
             <slot name="query"></slot>
           </div>
         </div>
-        <div style="text-align:center;margin-top:10px">
+        <div style="text-align: center; margin-top: 10px">
           <el-button
             type="text"
             icon="el-icon-search"
             @click="query()"
             :disabled="disabled"
-          >{{queryButtonText}}</el-button>
-          <el-button type="text" @click="resetQuery" :disabled="disabled">重置</el-button>
+            >{{ queryButtonText }}</el-button
+          >
+          <el-button type="text" @click="resetQuery" :disabled="disabled"
+            >重置</el-button
+          >
         </div>
       </el-form>
     </div>
@@ -52,7 +58,7 @@
       ref="table"
       stripe
       highlight-current-row
-      :empty-text="disabled?'列表已禁用':undefined"
+      :empty-text="disabled ? '列表已禁用' : undefined"
       :data="data"
       :select-on-indeterminate="false"
       :border="border"
@@ -66,7 +72,7 @@
       @sort-change="onSortChange"
     >
       <el-table-column
-        :fixed="checkboxFixed?'left':undefined"
+        :fixed="checkboxFixed ? 'left' : undefined"
         v-if="showCheckbox"
         type="selection"
         width="35"
@@ -121,7 +127,7 @@ export default {
       default: "记录",
     },
     tableMaxHeight: {
-      default: undefined
+      default: undefined,
     },
     showToolbar: {
       type: Boolean,
@@ -468,6 +474,10 @@ export default {
       return new Promise((resolve, reject) => {
         getDataFunc(params)
           .then((res) => {
+            this.isLoading = false;
+            if (res.code != 0) {
+              return;
+            }
             if (res.data instanceof Array) {
               this.data = res.data;
               this.total = res.data.length;
@@ -486,7 +496,6 @@ export default {
               alert("找不到数据列表，请在data字段或者data.list字段赋值！");
             }
             this.hasGetData = true;
-            this.isLoading = false;
             resolve({ list: this.data, total: this.listTotal });
           })
           .catch((err) => {
