@@ -5,6 +5,7 @@
         <el-image :src="'/bg/'+item+'.jpg'" fit="cover" style="height:100%;width:100%;"></el-image>
       </el-carousel-item>
     </el-carousel>
+    <el-button @click="test">test</el-button>
   </div>
 </template>
 <script>
@@ -30,6 +31,9 @@ export default {
   },
   created() {},
   methods: {
+    test(){
+      this.$router.push("/sys/user?a=b");
+    }
   }
 };
 </script>

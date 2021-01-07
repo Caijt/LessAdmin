@@ -4,63 +4,245 @@
       <div class="__tabs">
         <div
           class="__tab-item"
-          v-for="item in $store.state.sys.openedPageRouters"
-          :class="{ '__is-active': item.meta.canMultipleOpen?item.fullPath==$route.fullPath:item.path==$route.path }"
+          v-for="item in openedPageRouters"
+          :class="{
+            '__is-active': item.fullPath == $route.fullPath,
+          }"
           :key="item.fullPath"
           @click="onClick(item)"
+          @contextmenu.prevent="showContextMenu($event, item)"
         >
-          {{item.meta.title}}
+          {{ item.meta.title }}
           <span
             class="el-icon-close"
             @click.stop="onClose(item)"
-            :style="$store.state.sys.openedPageRouters.length<=1?'width:0;':''"
+            @contextmenu.prevent.stop=""
+            :style="openedPageRouters.length <= 1 ? 'width:0;' : ''"
           ></span>
         </div>
       </div>
     </el-scrollbar>
+    <div v-show="contextMenuVisible">
+      <ul
+        :style="{ left: contextMenuLeft + 'px', top: contextMenuTop + 'px' }"
+        class="contextmenu"
+      >
+        <li>
+          <el-button type="text" @click="reload()" size="mini">
+            重新加载
+          </el-button>
+        </li>
+        <li>
+          <el-button
+            type="text"
+            @click="closeOtherLeft"
+            :disabled="false"
+            size="mini"
+            >关闭左边</el-button
+          >
+        </li>
+        <li>
+          <el-button
+            type="text"
+            @click="closeOtherRight"
+            :disabled="false"
+            size="mini"
+            >关闭右边</el-button
+          >
+        </li>
+        <li>
+          <el-button type="text" @click="closeOther" size="mini"
+            >关闭其他</el-button
+          >
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 <script>
 export default {
+  props: {
+    keepAliveComponentInstance: {},
+  },
+  data() {
+    return {
+      contextMenuVisible: false,
+      contextMenuLeft: 0,
+      contextMenuTop: 0,
+      contextMenuTargetPageRoute: null,
+      openedPageRouters: [],
+    };
+  },
   watch: {
     $route: {
       handler(v) {
-        this.$store.dispatch("openPage", v);
+        this.openPage(v);
       },
-      immediate: true
-    }
+      immediate: true,
+    },
+  },
+  mounted() {
+    window.addEventListener("click", () => {
+      this.contextMenuVisible = false;
+      this.contextMenuTargetPageRoute = null;
+    });
   },
   methods: {
+    openPage(route) {
+      if (route.name == "blank") {
+        return;
+      }
+      let isExist = this.openedPageRouters.some(
+        (item) => item.fullPath == route.fullPath
+      );
+      if (!isExist) {
+        //判断页面是否支持不同参数多开页面功能，如果不支持且已存在path值一样的页面路由，那就替换它
+        if (
+          !route.meta.canMultipleOpen &&
+          this.openedPageRouters.some((item) => item.path == route.path)
+        ) {
+          for (let index in this.openedPageRouters) {
+            if (this.openedPageRouters[index].path == route.path) {
+              this.openedPageRouters.splice(index, 1, route);
+              break;
+            }
+          }
+        } else {
+          this.openedPageRouters.push(route);
+        }
+      }
+    },
     //点击页面标签卡时
-    onClick(data) {
-      if (this.$route.fullPath != data.fullPath) {
-        this.$router.push(data.fullPath);
+    onClick(route) {
+      if (route !== this.$route) {
+        this.$router.push(route);
       }
     },
     //关闭页面标签时
     onClose(route) {
-      if (route.fullPath == this.$route.fullPath) {
-        let index = this.$store.state.sys.openedPageRouters.indexOf(route);
-        this.$store.dispatch("closePage", route);
+      let index = this.openedPageRouters.indexOf(route);
+      this.delPageRoute(route);
+      if (route.fullPath === this.$route.fullPath) {
         //删除页面后，跳转到上一页面
-        this.$router.push(
-          this.$store.state.sys.openedPageRouters[index < 1 ? 0 : index - 1]
-            .path
+        this.$router.replace(
+          this.openedPageRouters[index == 0 ? 0 : index - 1]
         );
-      } else {
-        let lastPath = this.$route.fullPath;
-        //先跳转到要删除的页面，再删除页面路由，再跳转回来原来的页面
-        this.$router.replace(route).then(() => {          
-          this.$store.dispatch("closePage", route);
-          this.$router.replace(lastPath);
+      }
+    },
+    //右键显示菜单
+    showContextMenu(e, route) {
+      this.contextMenuTargetPageRoute = route;
+      this.contextMenuLeft = e.layerX;
+      this.contextMenuTop = e.layerY;
+      this.contextMenuVisible = true;
+    },
+    reload() {
+      this.delPageRoute({ fullPath: this.contextMenuTargetPageRoute.fullPath });
+      if (this.contextMenuTargetPageRoute.fullPath === this.$route.fullPath) {
+        this.$router.push({ path: "/blank" }).then(() => {
+          this.$router.push(this.contextMenuTargetPageRoute);
         });
       }
-    }
-  }
+    },
+    //关闭其他页面
+    closeOther() {
+      for (let i = 0; i < this.openedPageRouters.length; i++) {
+        let r = this.openedPageRouters[i];
+        if (r !== this.contextMenuTargetPageRoute) {
+          this.delPageRoute(r);
+          i--;
+        }
+      }
+      if (this.contextMenuTargetPageRoute.fullPath != this.$route.fullPath) {
+        this.$router.replace(this.contextMenuTargetPageRoute);
+      }
+    },
+    //根据路径获取索引
+    getPageRouteIndex(fullPath) {
+      for (let i = 0; i < this.openedPageRouters.length; i++) {
+        if (this.openedPageRouters[i].fullPath === fullPath) {
+          return i;
+        }
+      }
+    },
+    //关闭左边页面
+    closeOtherLeft() {
+      let index = this.openedPageRouters.indexOf(
+        this.contextMenuTargetPageRoute
+      );
+      let currentIndex = this.getPageRouteIndex(this.$route.fullPath);
+      if (index > currentIndex) {
+        this.$router.replace(this.contextMenuTargetPageRoute);
+      }
+      for (let i = 0; i < index; i++) {
+        let r = this.openedPageRouters[i];
+        this.delPageRoute(r);
+        i--;
+        index--;
+      }
+    },
+    //关闭右边页面
+    closeOtherRight() {
+      let index = this.openedPageRouters.indexOf(
+        this.contextMenuTargetPageRoute
+      );
+      let currentIndex = this.getPageRouteIndex(this.$route.fullPath);
+      for (let i = index + 1; i < this.openedPageRouters.length; i++) {
+        let r = this.openedPageRouters[i];
+        this.delPageRoute(r);
+        i--;
+      }
+      if (index < currentIndex) {
+        this.$router.replace(this.contextMenuTargetPageRoute);
+      }
+    },
+    //删除页面及页面缓存
+    delPageRoute(route) {
+      let routeIndex = this.openedPageRouters.indexOf(route);
+      if (routeIndex >= 0) {
+        this.openedPageRouters.splice(routeIndex, 1);
+      }
+      let cache = this.keepAliveComponentInstance.cache;
+      let keys = this.keepAliveComponentInstance.keys;
+      let key = route.fullPath;
+      let keyIndex = keys.indexOf(key);
+      if (keyIndex > -1) {
+        keys.splice(keyIndex, 1);
+        if (cache[key] != null) {
+          delete cache[key];
+        }
+      }
+    },
+  },
 };
 </script>
 <style lang="scss">
 .__common-layout-pageTabs {
+  .contextmenu {
+    // width: 100px;
+    margin: 0;
+    border: 1px solid #e4e7ed;
+    background: #fff;
+    z-index: 3000;
+    position: absolute;
+    list-style-type: none;
+    padding: 5px 0;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+  .contextmenu li {
+    margin: 0;
+    padding: 0px 15px;
+  }
+  .contextmenu li:hover {
+    background: #f2f2f2;
+    cursor: pointer;
+  }
+  .contextmenu li button {
+    color: #2c3e50;
+  }
   $c-tab-border-color: #dcdfe6;
   position: relative;
   &::before {

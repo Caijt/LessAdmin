@@ -1,13 +1,22 @@
 <template>
   <el-main class="__common-layout-main">
-    <page-tabs class="c-mg-t-10p" v-if="$store.state.sys.config.PAGE_TABS" />
+    <page-tabs
+      class="c-mg-t-10p"
+      v-if="$store.state.sys.config.PAGE_TABS"
+      :keep-alive-component-instance="keepAliveComponentInstance"
+    />
     <div class="c-pd-20p">
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item v-for="m in breadcrumbItems" :key="m.id">{{m.name}}</el-breadcrumb-item>
+        <el-breadcrumb-item v-for="m in breadcrumbItems" :key="m.id">{{
+          m.name
+        }}</el-breadcrumb-item>
       </el-breadcrumb>
       <div class="c-h-15p"></div>
       <keep-alive v-if="$store.state.sys.config.PAGE_TABS">
-        <router-view :key="$route.fullPath" />
+        <router-view
+          :key="$route.fullPath"
+          ref="routerView"
+        />
       </keep-alive>
       <router-view v-else />
     </div>
@@ -17,17 +26,21 @@
 import pageTabs from "./pageTabs";
 export default {
   components: { pageTabs },
+  mounted() {
+    //获取keep-alive的控件实例对象
+    this.keepAliveComponentInstance = this.$refs.routerView.$vnode.parent.componentInstance;
+  },
   data() {
     return {
-      viewNames: ["role"]
+      keepAliveComponentInstance: null
     };
   },
   computed: {
     breadcrumbItems() {
       let items = [];
-      let buildItems = id => {
+      let buildItems = (id) => {
         let b = this.$store.state.sys.permissionMenus.find(
-          item => item.id == id
+          (item) => item.id == id
         );
         if (b) {
           items.unshift(b);
@@ -38,8 +51,11 @@ export default {
       };
       buildItems(this.$route.meta.id);
       return items;
-    }
-  }
+    },
+  },
+  methods: {
+   
+  },
 };
 </script>
 <style lang="scss">

@@ -92,7 +92,13 @@ router.beforeEach((to, from, next) => {
               name: "layout",
               path: "",
               component: layout,
-              children: []
+              children: [
+                //空白路由，用于刷新
+                {
+                  name: "blank",
+                  path: "blank"
+                }
+              ]
             };
 
             //构建完整路径及权限路径值
