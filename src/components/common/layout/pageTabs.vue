@@ -63,6 +63,10 @@
 export default {
   props: {
     keepAliveComponentInstance: {},
+    blankRouteName: {
+      type: String,
+      default: "blank",
+    },
   },
   data() {
     return {
@@ -82,31 +86,32 @@ export default {
     },
   },
   mounted() {
-    window.addEventListener("click", () => {
-      this.contextMenuVisible = false;
-      this.contextMenuTargetPageRoute = null;
-    });
+    window.addEventListener("click", this.closeContextMenu);
+  },
+  destroyed() {
+    window.removeEventListener("click", this.closeContextMenu);
   },
   methods: {
+    //打开页面
     openPage(route) {
-      if (route.name == "blank") {
+      if (route.name == this.blankRouteName) {
         return;
       }
       let isExist = this.openedPageRouters.some(
         (item) => item.fullPath == route.fullPath
       );
       if (!isExist) {
+        let openedPageRoute = this.openedPageRouters.find(
+          (item) => item.path == route.path
+        );
         //判断页面是否支持不同参数多开页面功能，如果不支持且已存在path值一样的页面路由，那就替换它
-        if (
-          !route.meta.canMultipleOpen &&
-          this.openedPageRouters.some((item) => item.path == route.path)
-        ) {
-          for (let index in this.openedPageRouters) {
-            if (this.openedPageRouters[index].path == route.path) {
-              this.openedPageRouters.splice(index, 1, route);
-              break;
-            }
-          }
+        if (!route.meta.canMultipleOpen && openedPageRoute != null) {
+          this.delRouteCache(openedPageRoute.fullPath);
+          this.openedPageRouters.splice(
+            this.openedPageRouters.indexOf(openedPageRoute),
+            1,
+            route
+          );
         } else {
           this.openedPageRouters.push(route);
         }
@@ -115,7 +120,7 @@ export default {
     //点击页面标签卡时
     onClick(route) {
       if (route !== this.$route) {
-        this.$router.push(route);
+        this.$router.push(route.fullPath);
       }
     },
     //关闭页面标签时
@@ -136,11 +141,17 @@ export default {
       this.contextMenuTop = e.layerY;
       this.contextMenuVisible = true;
     },
+    //隐藏右键菜单
+    closeContextMenu() {
+      this.contextMenuVisible = false;
+      this.contextMenuTargetPageRoute = null;
+    },
+    //重载页面
     reload() {
-      this.delPageRoute({ fullPath: this.contextMenuTargetPageRoute.fullPath });
+      this.delRouteCache(this.contextMenuTargetPageRoute.fullPath);
       if (this.contextMenuTargetPageRoute.fullPath === this.$route.fullPath) {
-        this.$router.push({ path: "/blank" }).then(() => {
-          this.$router.push(this.contextMenuTargetPageRoute);
+        this.$router.replace({ name: this.blankRouteName }).then(() => {
+          this.$router.replace(this.contextMenuTargetPageRoute);
         });
       }
     },
@@ -196,20 +207,25 @@ export default {
         this.$router.replace(this.contextMenuTargetPageRoute);
       }
     },
-    //删除页面及页面缓存
+    //删除页面
     delPageRoute(route) {
       let routeIndex = this.openedPageRouters.indexOf(route);
       if (routeIndex >= 0) {
         this.openedPageRouters.splice(routeIndex, 1);
       }
+      this.delRouteCache(route.fullPath);
+    },
+    //删除页面缓存
+    delRouteCache(key) {
       let cache = this.keepAliveComponentInstance.cache;
       let keys = this.keepAliveComponentInstance.keys;
-      let key = route.fullPath;
-      let keyIndex = keys.indexOf(key);
-      if (keyIndex > -1) {
-        keys.splice(keyIndex, 1);
-        if (cache[key] != null) {
-          delete cache[key];
+      for (let i = 0; i < keys.length; i++) {
+        if (keys[i] == key) {
+          keys.splice(i, 1);
+          if (cache[key] != null) {
+            delete cache[key];
+          }
+          break;
         }
       }
     },

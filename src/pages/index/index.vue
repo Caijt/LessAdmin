@@ -33,6 +33,7 @@ export default {
   methods: {
     test(){
       this.$router.push("/sys/user?a=b");
+      console.log(this.$router);
     }
   }
 };
