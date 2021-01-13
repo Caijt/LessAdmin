@@ -25,7 +25,7 @@
     <div v-show="contextMenuVisible">
       <ul
         :style="{ left: contextMenuLeft + 'px', top: contextMenuTop + 'px' }"
-        class="contextmenu"
+        class="__contextmenu"
       >
         <li>
           <el-button type="text" @click="reload()" size="mini">
@@ -62,22 +62,23 @@
 <script>
 export default {
   props: {
-    keepAliveComponentInstance: {},
+    keepAliveComponentInstance: {}, //keep-alive控件实例对象
     blankRouteName: {
       type: String,
       default: "blank",
-    },
+    }, //空白路由的name值
   },
   data() {
     return {
-      contextMenuVisible: false,
-      contextMenuLeft: 0,
-      contextMenuTop: 0,
-      contextMenuTargetPageRoute: null,
-      openedPageRouters: [],
+      contextMenuVisible: false, //右键菜单是否显示
+      contextMenuLeft: 0, //右键菜单显示位置
+      contextMenuTop: 0, //右键菜单显示位置
+      contextMenuTargetPageRoute: null, //右键所指向的菜单路由
+      openedPageRouters: [], //已打开的路由页面
     };
   },
   watch: {
+    //当路由变更时，执行打开页面的方法
     $route: {
       handler(v) {
         this.openPage(v);
@@ -86,6 +87,7 @@ export default {
     },
   },
   mounted() {
+    //添加点击关闭右键菜单
     window.addEventListener("click", this.closeContextMenu);
   },
   destroyed() {
@@ -119,7 +121,7 @@ export default {
     },
     //点击页面标签卡时
     onClick(route) {
-      if (route !== this.$route) {
+      if (route.fullPath !== this.$route.fullPath) {
         this.$router.push(route.fullPath);
       }
     },
@@ -234,7 +236,7 @@ export default {
 </script>
 <style lang="scss">
 .__common-layout-pageTabs {
-  .contextmenu {
+  .__contextmenu {
     // width: 100px;
     margin: 0;
     border: 1px solid #e4e7ed;
@@ -247,18 +249,19 @@ export default {
     font-size: 14px;
     color: #333;
     box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, 0.1);
+    li {
+      margin: 0;
+      padding: 0px 15px;
+      &:hover {
+        background: #f2f2f2;
+        cursor: pointer;
+      }
+      button {
+        color: #2c3e50;
+      }
+    }
   }
-  .contextmenu li {
-    margin: 0;
-    padding: 0px 15px;
-  }
-  .contextmenu li:hover {
-    background: #f2f2f2;
-    cursor: pointer;
-  }
-  .contextmenu li button {
-    color: #2c3e50;
-  }
+
   $c-tab-border-color: #dcdfe6;
   position: relative;
   &::before {

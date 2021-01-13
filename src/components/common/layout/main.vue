@@ -12,12 +12,11 @@
         }}</el-breadcrumb-item>
       </el-breadcrumb>
       <div class="c-h-15p"></div>
-      <keep-alive v-if="$store.state.sys.config.PAGE_TABS">
-        <router-view
-          :key="$route.fullPath"
-          ref="routerView"
-        />
-      </keep-alive>
+      <div v-if="$store.state.sys.config.PAGE_TABS" ref="keepAliveContainer">
+        <keep-alive>
+          <router-view :key="$route.fullPath" />
+        </keep-alive>
+      </div>
       <router-view v-else />
     </div>
   </el-main>
@@ -28,11 +27,13 @@ export default {
   components: { pageTabs },
   mounted() {
     //获取keep-alive的控件实例对象
-    this.keepAliveComponentInstance = this.$refs.routerView.$vnode.parent.componentInstance;
+    if (this.$refs.keepAliveContainer) {
+      this.keepAliveComponentInstance = this.$refs.keepAliveContainer.childNodes[0].__vue__;
+    }
   },
   data() {
     return {
-      keepAliveComponentInstance: null
+      keepAliveComponentInstance: null,
     };
   },
   computed: {
@@ -53,9 +54,7 @@ export default {
       return items;
     },
   },
-  methods: {
-   
-  },
+  methods: {},
 };
 </script>
 <style lang="scss">
