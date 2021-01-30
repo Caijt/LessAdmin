@@ -75,6 +75,9 @@ router.beforeEach((to, from, next) => {
           let layout = require("@/components/common/layout/" + store.state.sys.config.LAYOUT + "/index").default;
           /* 获取登录认证信息 */
           authApi.getAuthInfo().then(res => {
+            if (res.code != 0) {
+              return;
+            }
             let permissionMenus = res.data.permissionMenus;
             permissionMenus.unshift({
               id: -1,
@@ -89,7 +92,13 @@ router.beforeEach((to, from, next) => {
               name: "layout",
               path: "",
               component: layout,
-              children: []
+              children: [
+                //空白路由，用于刷新
+                {
+                  name: "blank",
+                  path: "blank"
+                }
+              ]
             };
 
             //构建完整路径及权限路径值

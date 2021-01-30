@@ -1,16 +1,17 @@
-import request from '@/utils/request'
+import request from '@/utils/request';
+import network from '@/utils/network';
 import baseUrl from './baseUrl'
 const BASE_URL = baseUrl + '/Token'
 export default {
   getPageList(params) {
-    return request({
+    return network.request({
       url: BASE_URL + '/GetPageList',
       method: 'get',
       params
     })
   },
   deleteById(accessToken) {
-    return request({
+    return network.request({
       url: BASE_URL + '/deleteById',
       method: 'post',
       data: accessToken
@@ -18,7 +19,7 @@ export default {
   },
   //禁用token
   disableToken(accessToken) {
-    return request({
+    return network.request({
       url: BASE_URL + '/DisableToken',
       method: 'post',
       params: { accessToken }
@@ -26,13 +27,13 @@ export default {
   },
   //重载已禁用的token到缓存中
   reloadDisabledToken() {
-    return request({
+    return network.request({
       url: BASE_URL + '/reloadDisabledToken'
     })
   },
   //获取全部已禁用的token
   getDisabledTokens() {
-    return request({
+    return network.request({
       url: BASE_URL + '/GetDisabledTokens'
     })
   }

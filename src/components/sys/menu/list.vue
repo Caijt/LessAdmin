@@ -59,7 +59,7 @@
 <script>
 import listMixin from "@/mixins/list";
 import list from "@/components/common/list";
-
+import api from "@/api/sys/menu";
 export default {
   mixins: [listMixin],
   components: {
@@ -68,7 +68,7 @@ export default {
   props: {},
   data() {
     return {
-      api: require("@/api/sys/menu").default,
+      api,
       //查询条件字段
       queryParams: {
         name: ""
@@ -83,7 +83,8 @@ export default {
           this.sourceData = res.data;
           let data = this.$commonJs.toTreeData(res.data);
           resolve({
-            data
+            data,
+            code:0
           });
         });
       });
