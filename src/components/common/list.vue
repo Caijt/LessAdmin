@@ -562,6 +562,11 @@ export default {
             this.isLoading = true;
             func(data)
               .then((res) => {
+                if (res.code != 0) {
+                  this.isLoading = false;
+                  resolve(res);
+                  return;
+                }
                 if (this.page) {
                   this.getData();
                 } else {
