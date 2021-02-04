@@ -1,24 +1,7 @@
-# wk
+# LessAdmin后台管理开发框架    
 
-## Project setup
-```
-npm install
-```
+一个基于Vue + Asp.Net Core的后台管理开发框架
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+[查看框架文档](http://caijt.com/lessAdmin/)
 
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+[框架体验](http://test.caijt.com:9001/)
