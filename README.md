@@ -4,4 +4,4 @@
 
 [查看框架文档](http://caijt.com/lessAdmin/)
 
-[框架体验](http://test.caijt.com:9001/)
+[框架体验](http://dev.caijt.com/)
